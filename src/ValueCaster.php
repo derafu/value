@@ -12,19 +12,130 @@ declare(strict_types=1);
 
 namespace Derafu\Value;
 
+use Derafu\Value\Exception\TypeMismatchException;
 use Derafu\Value\Exception\ValueConversionException;
 use Stringable;
 use Throwable;
 
 /**
- * Explicit scalar conversions, independent of array keys and reader policies.
+ * Strict scalar reads and explicit conversions, independent of array keys.
  *
- * Null is preserved. Invalid input throws instead of returning a fallback.
- * Numbers accept complete PHP numeric strings, including decimal exponents.
- * Boolean inputs are never converted to numbers.
+ * getXXX() accepts null; requireXXX() rejects it. Reads preserve existing types,
+ * with string reads also accepting Stringable through explicit text conversion.
+ * toXXX() preserves null and converts supported input forms. Numeric conversions
+ * accept complete PHP numeric strings, including decimal exponents; boolean
+ * inputs are never converted to numbers. Invalid input throws without fallback.
  */
 final class ValueCaster
 {
+    /**
+     * Reads text without accepting numeric or boolean input. Null is preserved.
+     *
+     * @throws TypeMismatchException If the input is not text or Stringable conversion fails.
+     */
+    public static function getString(mixed $value): ?string
+    {
+        return $value === null ? null : self::requireString($value);
+    }
+
+    /**
+     * Requires string or Stringable input, without trimming the resulting text.
+     *
+     * Stringable conversion delegates to toString() through ValueType, keeping
+     * the original cause if conversion fails.
+     *
+     * @throws TypeMismatchException If the input is not text or Stringable conversion fails.
+     */
+    public static function requireString(mixed $value): string
+    {
+        $text = ValueType::oneOf(
+            ValueType::string(),
+            ValueType::instanceOf(Stringable::class)
+        )->parse($value);
+
+        return ValueType::toString()->parse($text);
+    }
+
+    /**
+     * Reads an existing integer without conversion. Null is preserved.
+     *
+     * @throws TypeMismatchException If the non-null input is not an int.
+     */
+    public static function getInt(mixed $value): ?int
+    {
+        return $value === null ? null : self::requireInt($value);
+    }
+
+    /**
+     * Requires an existing integer without conversion.
+     *
+     * @throws TypeMismatchException If the input is not an int, including null.
+     */
+    public static function requireInt(mixed $value): int
+    {
+        return ValueType::int()->parse($value);
+    }
+
+    /**
+     * Reads an existing float without conversion. Null is preserved.
+     *
+     * @throws TypeMismatchException If the non-null input is not a float.
+     */
+    public static function getFloat(mixed $value): ?float
+    {
+        return $value === null ? null : self::requireFloat($value);
+    }
+
+    /**
+     * Requires an existing float without converting integers.
+     *
+     * @throws TypeMismatchException If the input is not a float, including null.
+     */
+    public static function requireFloat(mixed $value): float
+    {
+        return ValueType::float()->parse($value);
+    }
+
+    /**
+     * Reads an existing integer or float, preserving its type and null.
+     *
+     * @throws TypeMismatchException If the non-null input is not a number.
+     */
+    public static function getNumber(mixed $value): int|float|null
+    {
+        return $value === null ? null : self::requireNumber($value);
+    }
+
+    /**
+     * Requires an existing integer or float, preserving its type.
+     *
+     * @throws TypeMismatchException If the input is not a number, including null.
+     */
+    public static function requireNumber(mixed $value): int|float
+    {
+        return ValueType::number()->parse($value);
+    }
+
+    /**
+     * Reads an existing boolean without conversion. Null is preserved.
+     *
+     * @throws TypeMismatchException If the non-null input is not a bool.
+     */
+    public static function getBool(mixed $value): ?bool
+    {
+        return $value === null ? null : self::requireBool($value);
+    }
+
+    /**
+     * Requires an existing boolean without conversion.
+     *
+     * @throws TypeMismatchException If the input is not a bool, including null.
+     */
+    public static function requireBool(mixed $value): bool
+    {
+        return ValueType::bool()->parse($value);
+    }
+
     /**
      * Converts an exact integer within the platform range, without truncation.
      *
