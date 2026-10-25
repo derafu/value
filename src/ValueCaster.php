@@ -18,7 +18,8 @@ use Stringable;
 use Throwable;
 
 /**
- * Strict scalar reads and explicit conversions, independent of array keys.
+ * Strict reads of scalars and objects, and explicit conversions, independent of
+ * array keys.
  *
  * getXXX() accepts null; requireXXX() rejects it. Reads preserve existing types,
  * with string reads also accepting Stringable through explicit text conversion.
@@ -134,6 +135,32 @@ final class ValueCaster
     public static function requireBool(mixed $value): bool
     {
         return ValueType::bool()->parse($value);
+    }
+
+    /**
+     * Reads an existing instance of a class or interface. Null is preserved.
+     *
+     * @template T of object
+     * @param class-string<T> $class
+     * @return T|null
+     * @throws TypeMismatchException If the non-null input is not an instance of the class.
+     */
+    public static function getObject(mixed $value, string $class): ?object
+    {
+        return $value === null ? null : self::requireObject($value, $class);
+    }
+
+    /**
+     * Requires an existing instance of a class or interface.
+     *
+     * @template T of object
+     * @param class-string<T> $class
+     * @return T
+     * @throws TypeMismatchException If the input is not an instance of the class, including null.
+     */
+    public static function requireObject(mixed $value, string $class): object
+    {
+        return ValueType::instanceOf($class)->parse($value);
     }
 
     /**
