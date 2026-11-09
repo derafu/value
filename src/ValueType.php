@@ -454,6 +454,39 @@ final readonly class ValueType
     }
 
     /**
+     * The name of an existing class, optionally constrained to a base type.
+     *
+     * The value must be a string naming a class or enum. Interfaces and traits
+     * are not accepted as values. Class lookup permits autoloading and preserves
+     * the input string, without trimming or normalizing its case. Abstract
+     * classes are accepted: no object is instantiated or required to be
+     * instantiable.
+     *
+     * @template C of object
+     * @param class-string<C>|null $base Optional existing base class or interface
+     * that the candidate class must extend or implement.
+     * @return ($base is null ? self<class-string> : self<class-string<C>>)
+     * @throws TypeMismatchException When parsed input is not an existing class
+     * name or does not satisfy the requested base type. Errors include the
+     * path and source supplied to parse().
+     */
+    public static function classString(?string $base = null): self
+    {
+        $name = $base === null ? 'class-string' : 'class-string<' . $base . '>';
+
+        return new self($name, static function (mixed $value, string $path, ?string $source) use ($base, $name): string {
+            if (!is_string($value) || !class_exists($value)) {
+                throw self::mismatch($path, $name, $value, $source);
+            }
+            if ($base !== null && !is_a($value, $base, true)) {
+                throw self::mismatch($path, $name, $value, $source);
+            }
+
+            return $value;
+        });
+    }
+
+    /**
      * A backed enum case, or its exact backing value, without scalar coercion.
      *
      * A string-backed enum accepts strings and an int-backed enum accepts
