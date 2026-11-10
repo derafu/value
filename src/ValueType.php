@@ -275,6 +275,42 @@ final readonly class ValueType
     }
 
     /**
+     * An array with integer keys, including empty arrays and lists.
+     *
+     * Keys may start anywhere, have gaps, or be negative. Keys, iteration order
+     * and values are preserved. String keys are rejected without conversion.
+     *
+     * @return self<array<int, mixed>>
+     */
+    public static function indexed(): self
+    {
+        return new self('indexed', static fn (mixed $value, string $path, ?string $source): array
+            => self::parseIndexed($value, $path, $source, 'indexed'));
+    }
+
+    /**
+     * Validates integer keys, reporting the path of any string key.
+     *
+     * @return array<int, mixed>
+     */
+    private static function parseIndexed(mixed $value, string $path, ?string $source, string $expected): array
+    {
+        if (!is_array($value)) {
+            throw self::mismatch($path, $expected, $value, $source);
+        }
+
+        $result = [];
+        foreach ($value as $key => $item) {
+            if (!is_int($key)) {
+                throw self::mismatch(self::path($path, $key), 'int key', $key, $source);
+            }
+            $result[$key] = $item;
+        }
+
+        return $result;
+    }
+
+    /**
      * An array with string keys, empty or not. Numeric strings that PHP turns
      * into integer keys are not map keys; use array() or arrayOf() for them.
      *
@@ -368,6 +404,32 @@ final readonly class ValueType
                 $result = [];
                 foreach ($value as $key => $v) {
                     $result[$key] = $item->parse($v, self::path($path, $key), $source);
+                }
+
+                return $result;
+            }
+        );
+    }
+
+    /**
+     * An integer-keyed array whose values are parsed by the supplied type.
+     *
+     * Integer keys and their order are preserved, including gaps and negative
+     * keys. Values follow the validation or conversion policy of the item type.
+     *
+     * @template I
+     * @param self<I> $item The type of each value.
+     * @return self<array<int, I>>
+     */
+    public static function indexedOf(self $item): self
+    {
+        return new self(
+            'indexed<' . $item->name . '>',
+            static function (mixed $value, string $path, ?string $source) use ($item): array {
+                $indexed = self::parseIndexed($value, $path, $source, 'indexed<' . $item->name . '>');
+                $result = [];
+                foreach ($indexed as $key => $value) {
+                    $result[$key] = $item->parse($value, self::path($path, $key), $source);
                 }
 
                 return $result;
