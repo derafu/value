@@ -48,9 +48,14 @@ final class ValueTypeTest extends TestCase
             'list of strings' => [ValueType::listOf(ValueType::string()), ['a', 'b']],
             'empty list of strings' => [ValueType::listOf(ValueType::string()), []],
             'map of ints' => [ValueType::mapOf(ValueType::int()), ['a' => 1]],
+            'map with several keys' => [ValueType::map(), ['a' => 1, 'b' => 2]],
+            'map of ints with several keys' => [ValueType::mapOf(ValueType::int()), ['a' => 1, 'b' => 2]],
+            'array of ints' => [ValueType::arrayOf(ValueType::int()), [3 => 1, 'a' => 2]],
             'empty map of ints' => [ValueType::mapOf(ValueType::int()), []],
             'one of, first' => [ValueType::oneOf(ValueType::bool(), ValueType::map()), true],
             'one of, last' => [ValueType::oneOf(ValueType::bool(), ValueType::map()), ['a' => 1]],
+            'one of, third' => [ValueType::oneOf(ValueType::bool(), ValueType::map(), ValueType::string()), 'a'],
+            'one of with a single type' => [ValueType::oneOf(ValueType::int()), 3],
             'nullable with a value' => [ValueType::string()->nullable(), 'a'],
             'nullable with null' => [ValueType::string()->nullable(), null],
             'non-empty string' => [ValueType::nonEmptyString(), 'a'],
@@ -96,6 +101,7 @@ final class ValueTypeTest extends TestCase
             'list of strings with a map' => [ValueType::listOf(ValueType::string()), ['a' => 'b'], 'list<string>'],
             'map of ints with a string' => [ValueType::mapOf(ValueType::int()), 'a', 'map<int>'],
             'map of ints with a list' => [ValueType::mapOf(ValueType::int()), [1, 2], 'map<int>'],
+            'array of ints with a string' => [ValueType::arrayOf(ValueType::int()), 'a', 'array<int>'],
             'one of' => [ValueType::oneOf(ValueType::bool(), ValueType::map()), 'a', 'bool|map'],
             'nullable' => [ValueType::string()->nullable(), 1, 'string'],
             'non-empty string with an empty one' => [ValueType::nonEmptyString(), '', 'non-empty-string'],
@@ -229,7 +235,10 @@ final class ValueTypeTest extends TestCase
         $this->assertSame('stdClass', ValueType::instanceOf(stdClass::class)->name);
         $this->assertSame('date', ValueType::dateTime()->name);
         $this->assertSame('list<map<int>>', ValueType::listOf(ValueType::mapOf(ValueType::int()))->name);
+        $this->assertSame('array<int>', ValueType::arrayOf(ValueType::int())->name);
         $this->assertSame('bool|map', ValueType::oneOf(ValueType::bool(), ValueType::map())->name);
+        $this->assertSame('bool|map|string', ValueType::oneOf(ValueType::bool(), ValueType::map(), ValueType::string())->name);
+        $this->assertSame('int', ValueType::oneOf(ValueType::int())->name);
         $this->assertSame('string|null', ValueType::string()->nullable()->name);
     }
 

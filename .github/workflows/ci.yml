@@ -45,6 +45,9 @@ jobs:
       - name: Run PHPUnit
         run: XDEBUG_MODE=coverage vendor/bin/phpunit --configuration=phpunit.xml
 
+      - name: Run Infection
+        run: XDEBUG_MODE=coverage vendor/bin/infection --threads=2 --no-progress --with-uncovered
+
       - name: Upload PHPUnit result report
         if: failure()
         uses: actions/upload-artifact@v4

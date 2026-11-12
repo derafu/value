@@ -51,6 +51,14 @@ final class ValueCasterTest extends TestCase
             [(string) PHP_INT_MAX . '.000', PHP_INT_MAX],
             [(string) PHP_INT_MIN . '0e-1', PHP_INT_MIN],
             [(float) PHP_INT_MIN, PHP_INT_MIN], [0.0, 0], [-0.0, 0],
+            // The whitespace around a number is not part of its digits, also at the limits.
+            [' ' . PHP_INT_MAX . ' ', PHP_INT_MAX], [PHP_INT_MAX . "\n", PHP_INT_MAX],
+            ["\t" . PHP_INT_MIN, PHP_INT_MIN],
+            // Numbers that have a 9 early are not the ones that are out of range.
+            ['99', 99], ['9999', 9999],
+            // The exponent can cancel a long fraction, and can fill the 19 digits of the range.
+            ['0.00000000000000000001e20', 1],
+            ['1e18', 1000000000000000000], ['9.223372036854775807e18', PHP_INT_MAX],
         ] as $index => [$input, $expected]) {
             yield 'integer ' . $index => ['toInt', $input, $expected];
         }
@@ -113,6 +121,8 @@ final class ValueCasterTest extends TestCase
             '1e-99999999999999999999999999999999',
             '1e-99', '1e99', '1e20', (float) PHP_INT_MAX,
             -(float) PHP_INT_MIN * 2, '0x10', '1_000', '1,000',
+            // The first value out of the range, on each side, has the length of the limit.
+            '9223372036854775808', '-9223372036854775809',
         ] as $index => $input) {
             yield 'invalid integer ' . $index => ['toInt', $input];
         }
