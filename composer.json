@@ -39,7 +39,7 @@
     "scripts": {
         "docs": "php tools/phpdocumentor run --config=phpdoc.xml",
         "tests": "XDEBUG_MODE=coverage vendor/bin/phpunit --configuration=phpunit.xml",
-        "infection": "XDEBUG_MODE=coverage vendor/bin/infection --threads=2 --no-progress --with-uncovered",
+        "infection": "XDEBUG_MODE=coverage vendor/bin/infection --threads=max --no-progress --with-uncovered",
         "phpcs-fix": "vendor/bin/php-cs-fixer fix -v --config=php-cs-fixer.php",
         "phpcs": "vendor/bin/php-cs-fixer fix -v --dry-run --diff --config=php-cs-fixer.php",
         "phpstan": "vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
